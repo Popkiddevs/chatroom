@@ -3,185 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POPKID XTECH CHATROOM</title>
+    <title>Group Chat</title>
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            background-color: #f4f4f4;
-        }
-
-        /* Stylish Login Container */
-        #login-container {
-            background-color: yellow;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            width: 300px;
-            margin: 100px auto;
-        }
-
-        #login-container h2 {
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        #login-container input[type="text"],
-        #login-container input[type="password"] {
-            width: calc(100% - 20px);
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        #login-container button {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        #login-container button:hover {
-            background-color: #0056b3;
-        }
-
-        #login-error {
-            color: red;
-            margin-top: 10px;
-        }
-
-        /* Chat Container Styles */
-        #chat-container {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 15px;
-            background-color: #eee;
-        }
-
-        .message {
-            background-color: #dcf8c6;
-            padding: 8px;
-            margin-bottom: 8px;
-            border-radius: 5px;
-            word-wrap: break-word;
-        }
-
-        .message .username {
-            font-weight: bold;
-            margin-right: 5px;
-            color: #1976d2;
-        }
-
-        /* Input Container Styles */
-        #input-container {
-            padding: 10px;
-            border-top: 1px solid #ccc;
-            display: flex;
-            background-color: #f9f9f9;
-        }
-
-        #message-input {
-            flex-grow: 1;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        #send-button {
-            padding: 8px 15px;
-            background-color: #4caf50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-left: 10px;
-        }
-
-        .hidden {
-            display: none;
-        }
+        body { font-family: sans-serif; margin: 20px; }
+        #login-container { border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; }
+        #chat-container { border: 1px solid #ccc; padding: 20px; height: 300px; overflow-y: scroll; display: none; }
+        .message { margin-bottom: 10px; padding: 8px; border-radius: 5px; background-color: #f0f0f0; }
+        .username { font-weight: bold; margin-right: 5px; }
+        #message-input-container { display: flex; margin-top: 10px; }
+        #message-input { flex-grow: 1; padding: 8px; }
+        #send-button { padding: 8px 15px; }
+        #user-list { margin-top: 10px; border: 1px solid #eee; padding: 10px; background-color: #f9f9f9; }
+        #user-list h3 { margin-top: 0; }
     </style>
 </head>
 <body>
 
     <div id="login-container">
-        <h2>POPKID CHATROOM LOGIN</h2>
-        <input type="text" id="username" placeholder="Username">
-        <input type="password" id="password" placeholder="Password (optional)">
-        <button onclick="login()">Enter Chat</button>
-        <p id="login-error" style="color: red;"></p>
-    </div>
-
-    <div id="chat-container" class="hidden">
+        <h2>Login</h2>
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" id="username">
         </div>
-
-    <div id="input-container" class="hidden">
-        <input type="text" id="message-input" placeholder="Type your message...">
-        <button id="send-button" onclick="sendMessage()">Send</button>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password">
+        </div>
+        <button id="login-button">Enter Chat</button>
     </div>
 
+    <div id="chat-container">
+        <h2>Group Chat</h2>
+        <div id="messages"></div>
+        <div id="message-input-container">
+            <input type="text" id="message-input" placeholder="Type your message...">
+            <button id="send-button">Send</button>
+        </div>
+        <div id="user-list">
+            <h3>Online Users</h3>
+            <ul id="users"></ul>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
     <script>
         const loginContainer = document.getElementById('login-container');
         const chatContainer = document.getElementById('chat-container');
-        const inputContainer = document.getElementById('input-container');
+        const usernameInput = document.getElementById('username');
+        const loginButton = document.getElementById('login-button');
+        const messagesDiv = document.getElementById('messages');
         const messageInput = document.getElementById('message-input');
-        const chatArea = document.getElementById('chat-container');
-        let loggedInUsername = null;
-        // In a real application, this would store the chat history fetched from the server
-        const chatHistory = [];
+        const sendButton = document.getElementById('send-button');
+        const usersListUl = document.getElementById('users');
 
-        function login() {
-            const usernameInput = document.getElementById('username');
+        let socket;
+        let currentUsername;
+
+        loginButton.addEventListener('click', () => {
             const username = usernameInput.value.trim();
-
             if (username) {
-                loggedInUsername = username;
-                loginContainer.classList.add('hidden');
-                chatContainer.classList.remove('hidden');
-                inputContainer.classList.remove('hidden');
-                // In a real application, you'd fetch the entire chat history here
-                // For now, we'll just display the simulated history
-                chatHistory.forEach(msg => displayMessage(msg.username, msg.text));
-                displayMessage("System", `${loggedInUsername} has joined the chat.`);
-                // In a real app, you'd also need to notify the server about the new user
-            } else {
-                document.getElementById('login-error').textContent = "Please enter a username.";
-            }
-        }
+                currentUsername = username;
+                loginContainer.style.display = 'none';
+                chatContainer.style.display = 'block';
 
-        function sendMessage() {
-            const messageText = messageInput.value.trim();
-            if (messageText && loggedInUsername) {
-                displayMessage(loggedInUsername, messageText);
-                // In a real application, you would send this new message to the server
-                // The server would then broadcast it to all connected clients and store it
-                chatHistory.push({ username: loggedInUsername, text: messageText }); // For local simulation
+                socket = io(); // Connect to the Socket.IO server
+
+                socket.emit('login', { username: currentUsername });
+
+                socket.on('load_messages', (existingMessages) => {
+                    existingMessages.forEach(msg => {
+                        displayMessage(msg.username, msg.text);
+                    });
+                });
+
+                socket.on('new_message', (data) => {
+                    displayMessage(data.username, data.text);
+                });
+
+                socket.on('user_joined', (message) => {
+                    const joinLeaveMessage = document.createElement('div');
+                    joinLeaveMessage.textContent = message;
+                    joinLeaveMessage.style.fontStyle = 'italic';
+                    joinLeaveMessage.style.color = 'gray';
+                    messagesDiv.appendChild(joinLeaveMessage);
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                });
+
+                socket.on('user_left', (message) => {
+                    const joinLeaveMessage = document.createElement('div');
+                    joinLeaveMessage.textContent = message;
+                    joinLeaveMessage.style.fontStyle = 'italic';
+                    joinLeaveMessage.style.color = 'gray';
+                    messagesDiv.appendChild(joinLeaveMessage);
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                });
+
+                socket.on('user_list', (users) => {
+                    usersListUl.innerHTML = '';
+                    users.forEach(user => {
+                        const li = document.createElement('li');
+                        li.textContent = user;
+                        usersListUl.appendChild(li);
+                    });
+                });
+            } else {
+                alert('Please enter a username.');
+            }
+        });
+
+        sendButton.addEventListener('click', () => {
+            const message = messageInput.value.trim();
+            if (message) {
+                socket.emit('chat_message', message);
                 messageInput.value = '';
             }
-        }
+        });
+
+        messageInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                sendButton.click();
+            }
+        });
 
         function displayMessage(username, text) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('message');
             messageDiv.innerHTML = `<span class="username">${username}:</span> ${text}`;
-            chatArea.appendChild(messageDiv);
-            chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the latest message
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to the bottom
         }
-
-        // Simulate initial chat history (in a real app, this comes from the server)
-        chatHistory.push({ username: "Alice", text: "Hey everyone! Welcome to the chat." });
-        chatHistory.push({ username: "Bob", text: "Hello Alice and anyone else here!" });
-        chatHistory.push({ username: "Charlie", text: "Glad to be here. What's up?" });
     </script>
-
 </body>
 </html>
