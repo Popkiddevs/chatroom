@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Group Chat</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="chat-body">
+  <div class="chat-container">
+    <h2>Group Chatroom</h2>
+    <ul id="messages"></ul>
+    <form id="form" action="">
+      <input id="input" autocomplete="off" placeholder="Type a message..." /><button>Send</button>
+    </form>
+  </div>
+
+  <script>
+    const socket = io();
+    const username = document.referrer.split('username=')[1]?.split('&')[0] || "Guest";
+
+    socket.emit('new user', decodeURIComponent(username));
+
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const messages = document.getElementById('messages');
+
+    socket.on('load messages', (msgs) => {
+      msgs.forEach(({ user, text }) => {
+        const item = document.createElement('li');
+        item.innerHTML = `<strong>${user}</strong>: ${text}`;
+        messages.appendChild(item);
+      });
+    });
+
+    socket.on('chat message', ({ user, text }) => {
+      const item = document.createElement('li');
+      item.innerHTML = `<strong>${user}</strong>: ${text}`;
+      messages.appendChild(item);
+      window.scrollTo(0, document.body.scrollHeight);
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (input.value) {
+        socket.emit('chat message', input.value);
+        input.value = '';
+      }
+    });
+  </script>
+</body>
+</html>
