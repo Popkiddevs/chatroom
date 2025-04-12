@@ -1,137 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Group Chat</title>
-    <style>
-        body { font-family: sans-serif; margin: 20px; }
-        #login-container { border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; }
-        #chat-container { border: 1px solid #ccc; padding: 20px; height: 300px; overflow-y: scroll; display: none; }
-        .message { margin-bottom: 10px; padding: 8px; border-radius: 5px; background-color: #f0f0f0; }
-        .username { font-weight: bold; margin-right: 5px; }
-        #message-input-container { display: flex; margin-top: 10px; }
-        #message-input { flex-grow: 1; padding: 8px; }
-        #send-button { padding: 8px 15px; }
-        #user-list { margin-top: 10px; border: 1px solid #eee; padding: 10px; background-color: #f9f9f9; }
-        #user-list h3 { margin-top: 0; }
-    </style>
+  <title>Login - Chat Room</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
-
-    <div id="login-container">
-        <h2>Login</h2>
-        <div>
-            <label for="username">Username:</label>
-            <input type="text" id="username">
-        </div>
-        <div>
-            <label for="password">Password:</label>
-            <input type="password" id="password">
-        </div>
-        <button id="login-button">Enter Chat</button>
-    </div>
-
-    <div id="chat-container">
-        <h2>Group Chat</h2>
-        <div id="messages"></div>
-        <div id="message-input-container">
-            <input type="text" id="message-input" placeholder="Type your message...">
-            <button id="send-button">Send</button>
-        </div>
-        <div id="user-list">
-            <h3>Online Users</h3>
-            <ul id="users"></ul>
-        </div>
-    </div>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const loginContainer = document.getElementById('login-container');
-        const chatContainer = document.getElementById('chat-container');
-        const usernameInput = document.getElementById('username');
-        const loginButton = document.getElementById('login-button');
-        const messagesDiv = document.getElementById('messages');
-        const messageInput = document.getElementById('message-input');
-        const sendButton = document.getElementById('send-button');
-        const usersListUl = document.getElementById('users');
-
-        let socket;
-        let currentUsername;
-
-        loginButton.addEventListener('click', () => {
-            const username = usernameInput.value.trim();
-            if (username) {
-                currentUsername = username;
-                loginContainer.style.display = 'none';
-                chatContainer.style.display = 'block';
-
-                socket = io(); // Connect to the Socket.IO server
-
-                socket.emit('login', { username: currentUsername });
-
-                socket.on('load_messages', (existingMessages) => {
-                    existingMessages.forEach(msg => {
-                        displayMessage(msg.username, msg.text);
-                    });
-                });
-
-                socket.on('new_message', (data) => {
-                    displayMessage(data.username, data.text);
-                });
-
-                socket.on('user_joined', (message) => {
-                    const joinLeaveMessage = document.createElement('div');
-                    joinLeaveMessage.textContent = message;
-                    joinLeaveMessage.style.fontStyle = 'italic';
-                    joinLeaveMessage.style.color = 'gray';
-                    messagesDiv.appendChild(joinLeaveMessage);
-                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                });
-
-                socket.on('user_left', (message) => {
-                    const joinLeaveMessage = document.createElement('div');
-                    joinLeaveMessage.textContent = message;
-                    joinLeaveMessage.style.fontStyle = 'italic';
-                    joinLeaveMessage.style.color = 'gray';
-                    messagesDiv.appendChild(joinLeaveMessage);
-                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                });
-
-                socket.on('user_list', (users) => {
-                    usersListUl.innerHTML = '';
-                    users.forEach(user => {
-                        const li = document.createElement('li');
-                        li.textContent = user;
-                        usersListUl.appendChild(li);
-                    });
-                });
-            } else {
-                alert('Please enter a username.');
-            }
-        });
-
-        sendButton.addEventListener('click', () => {
-            const message = messageInput.value.trim();
-            if (message) {
-                socket.emit('chat_message', message);
-                messageInput.value = '';
-            }
-        });
-
-        messageInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                sendButton.click();
-            }
-        });
-
-        function displayMessage(username, text) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message');
-            messageDiv.innerHTML = `<span class="username">${username}:</span> ${text}`;
-            messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to the bottom
-        }
-    </script>
+<body class="login-body">
+  <div class="login-container">
+    <h2>Welcome to Chat</h2>
+    <form action="/chat" method="POST">
+      <input type="text" name="username" placeholder="Username" required><br>
+      <input type="password" name="password" placeholder="Password" required><br>
+      <button type="submit">Enter Chat</button>
+    </form>
+  </div>
 </body>
 </html>
