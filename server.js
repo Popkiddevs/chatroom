@@ -1,55 +1,37 @@
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
+const path = require('path');
 
-const users = {};
-const messages = []; // In-memory storage for messages
+let messages = []; // In-memory message storage
 
-app.use(express.static('public')); // Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/public/index.html');
+  res.sendFile(__dirname + '/public/index.html');
+});
+
+app.post('/chat', (req, res) => {
+  const username = req.body.username;
+  if (!username) return res.redirect('/');
+  res.sendFile(__dirname + '/public/chat.html');
 });
 
 io.on('connection', (socket) => {
-    let username;
+  socket.on('new user', (username) => {
+    socket.username = username;
+    socket.emit('load messages', messages);
+  });
 
-    socket.on('login', (data) => {
-        username = data.username;
-        users[socket.id] = username;
-        console.log(`${username} connected`);
-
-        // Send existing messages to the newly connected user
-        socket.emit('load_messages', messages);
-
-        // Broadcast to all other users that a new user has joined
-        socket.broadcast.emit('user_joined', `${username} joined the chat`);
-
-        // Send updated user list (optional, but can be useful)
-        io.emit('user_list', Object.values(users));
-    });
-
-    socket.on('chat_message', (message) => {
-        const newMessage = { username: username, text: message };
-        messages.push(newMessage);
-        io.emit('new_message', newMessage); // Broadcast the new message to everyone
-    });
-
-    socket.on('disconnect', () => {
-        if (username) {
-            delete users[socket.id];
-            console.log(`${username} disconnected`);
-            socket.broadcast.emit('user_left', `${username} left the chat`);
-            io.emit('user_list', Object.values(users));
-        }
-    });
+  socket.on('chat message', (msg) => {
+    const messageObj = { user: socket.username, text: msg };
+    messages.push(messageObj);
+    io.emit('chat message', messageObj);
+  });
 });
 
-const PORT = 3000;
-server.listen(PORT, () => {
-    console.log(`Server listening on http://localhost:${PORT}`);
+http.listen(3000, () => {
+  console.log('Server listening on http://localhost:3000');
 });
