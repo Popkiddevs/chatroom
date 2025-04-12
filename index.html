@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POPKID XTECH CHATROOM</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+
+        /* Stylish Login Container */
+        #login-container {
+            background-color: yellow;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 300px;
+            margin: 100px auto;
+        }
+
+        #login-container h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #login-container input[type="text"],
+        #login-container input[type="password"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        #login-container button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #login-container button:hover {
+            background-color: #0056b3;
+        }
+
+        #login-error {
+            color: red;
+            margin-top: 10px;
+        }
+
+        /* Chat Container Styles */
+        #chat-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #eee;
+        }
+
+        .message {
+            background-color: #dcf8c6;
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            word-wrap: break-word;
+        }
+
+        .message .username {
+            font-weight: bold;
+            margin-right: 5px;
+            color: #1976d2;
+        }
+
+        /* Input Container Styles */
+        #input-container {
+            padding: 10px;
+            border-top: 1px solid #ccc;
+            display: flex;
+            background-color: #f9f9f9;
+        }
+
+        #message-input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #send-button {
+            padding: 8px 15px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-container">
+        <h2>POPKID CHATROOM LOGIN</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password (optional)">
+        <button onclick="login()">Enter Chat</button>
+        <p id="login-error" style="color: red;"></p>
+    </div>
+
+    <div id="chat-container" class="hidden">
+        </div>
+
+    <div id="input-container" class="hidden">
+        <input type="text" id="message-input" placeholder="Type your message...">
+        <button id="send-button" onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        const loginContainer = document.getElementById('login-container');
+        const chatContainer = document.getElementById('chat-container');
+        const inputContainer = document.getElementById('input-container');
+        const messageInput = document.getElementById('message-input');
+        const chatArea = document.getElementById('chat-container');
+        let loggedInUsername = null;
+        // In a real application, this would store the chat history fetched from the server
+        const chatHistory = [];
+
+        function login() {
+            const usernameInput = document.getElementById('username');
+            const username = usernameInput.value.trim();
+
+            if (username) {
+                loggedInUsername = username;
+                loginContainer.classList.add('hidden');
+                chatContainer.classList.remove('hidden');
+                inputContainer.classList.remove('hidden');
+                // In a real application, you'd fetch the entire chat history here
+                // For now, we'll just display the simulated history
+                chatHistory.forEach(msg => displayMessage(msg.username, msg.text));
+                displayMessage("System", `${loggedInUsername} has joined the chat.`);
+                // In a real app, you'd also need to notify the server about the new user
+            } else {
+                document.getElementById('login-error').textContent = "Please enter a username.";
+            }
+        }
+
+        function sendMessage() {
+            const messageText = messageInput.value.trim();
+            if (messageText && loggedInUsername) {
+                displayMessage(loggedInUsername, messageText);
+                // In a real application, you would send this new message to the server
+                // The server would then broadcast it to all connected clients and store it
+                chatHistory.push({ username: loggedInUsername, text: messageText }); // For local simulation
+                messageInput.value = '';
+            }
+        }
+
+        function displayMessage(username, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.innerHTML = `<span class="username">${username}:</span> ${text}`;
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the latest message
+        }
+
+        // Simulate initial chat history (in a real app, this comes from the server)
+        chatHistory.push({ username: "Alice", text: "Hey everyone! Welcome to the chat." });
+        chatHistory.push({ username: "Bob", text: "Hello Alice and anyone else here!" });
+        chatHistory.push({ username: "Charlie", text: "Glad to be here. What's up?" });
+    </script>
+
+</body>
+</html>
