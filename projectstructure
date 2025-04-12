@@ -1,0 +1,10 @@
+chatroom/
+│
+├── public/
+│   ├── index.html        # Login page
+│   ├── chat.html         # Chat UI
+│   ├── style.css         # All styling
+│   └── client.js         # Frontend JS (Socket.io)
+│
+├── server.js             # Main backend code
+├── package.json
